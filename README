@@ -1,0 +1,21 @@
+
+The filesystem is a very primitive variation of unix v6 filesystem.
+It's neither COW (as I've initially planned) nor uses write-ahead log,
+so it's unreliable on both data and metadata level. Some repair mechanisms
+could be implemented though (like deallocating inodes which have no links
+from other nodes), but I didn't bother to implement them.
+
+The on-disk representation of the filesystem is following:
+
+Pages: |--- 1 --|-- 2 .. n -----|------ n+1 --------|-- n+2 ... maxBlocks --|
+Data:  | Header | Inodes blocks | Free block bitmap |         Data          |
+
+Runtime File data structure is a thin wrapper for Inode. When the File is open,
+inodes along the whole path to this file are being locked as task requires, but
+this restriction unnecessary and could be relaxed since we separate links
+(references to the node from other nodes) and refs (references from runtime objects
+i.e. ffs.File), and we could easily hold a ref to unlinked file and continue reading
+it even if it was removed from the file tree.
+
+I also didn't implement walkTree iterator for recursive tree walkin since I didn't have
+much time. Hope the rest works more or less.
